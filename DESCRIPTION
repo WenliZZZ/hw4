@@ -19,5 +19,7 @@ BugReports: https://github.com/WenliZZZ/hw4/issues
 RoxygenNote: 7.3.3
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
+Config/testthat/edition: 3
