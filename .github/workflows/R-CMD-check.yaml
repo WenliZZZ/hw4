@@ -2,22 +2,31 @@ name: R-CMD-check
 
 on:
   push:
-    branches: [main, master]
+    branches: [ master ]
   pull_request:
-    branches: [main, master]
+    branches: [ master ]
 
 jobs:
   R-CMD-check:
     runs-on: ubuntu-latest
 
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - uses: r-lib/actions/setup-r@v2
-
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
         with:
-          extra-packages: any::testthat
+          use-public-rspm: true
 
-      - name: Check
+      - name: Install dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - name: Check package
         uses: r-lib/actions/check-r-package@v2
