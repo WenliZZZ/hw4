@@ -1,0 +1,115 @@
+---
+title: "my_logit_vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{my_logit-demo}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(hw4)
+library(stats)
+library(bench)
+```
+### Model Fitting
+
+In this vignette, I demonstrate how to apply the self-implemented my_logit() function to fit a logistic regression model and compare its results with the standard glm() function.
+```{r}
+data <- mtcars
+form <- am ~ mpg + wt
+
+fit_my  <- my_logit(form, data = data)
+fit_glm <- glm(form, data = data, family = binomial())
+
+fit_my
+```
+### Summary Output
+
+The summary() method extracts the estimated coefficients, standard errors, z-values, and p-values,
+presented in a regression table similar to the standard glm() output in R.
+```{r}
+summary(fit_my)
+```
+### Residuals Extracted
+
+The residuals() method returns the deviance residuals, which help evaluate model goodness-of-fit.
+Here I display only the first five residuals for inspection.
+```{r}
+residuals(fit_my)[1:5]
+```
+### Correctness Check: Coefficients
+
+To verify the correctness of our implementation, I compare coefficient estimates from my_logit()
+with those from the built-in glm() function. Since both use maximum likelihood estimation,
+their numerical values should be nearly identical.
+```{r}
+coef_my  <- as.vector(fit_my$coefficients)
+coef_glm <- as.vector(coef(fit_glm))
+
+cbind(
+my_logit = coef_my,
+glm      = coef_glm
+)
+
+all.equal(coef_my, coef_glm, tolerance = 1e-6)
+```
+### Correctness Check: Standard Errors
+
+Standard errors are computed using the inverse of the Fisher information matrix.
+Although glm() calculates these using optimized internal routines, our implementation
+derives them from the IRLS algorithm. I place both results side by side and compare.
+```{r}
+se_my  <- as.vector(fit_my$se)
+se_glm <- as.vector(summary(fit_glm)$coefficients[, "Std. Error"])
+
+cbind(
+se_my  = se_my,
+se_glm = se_glm
+)
+
+all.equal(se_my, se_glm, tolerance = 1e-4)
+```
+### Fitted Values Comparison
+
+Fitted values represent the predicted probabilities from the model.
+To ensure that our implementation produces equivalent predictions to glm(),
+I extract and compare the first ten fitted probabilities from both functions.
+```{r}
+fv_my  <- as.vector(fit_my$fitted.values)
+fv_glm <- as.vector(fitted(fit_glm))
+
+head(
+cbind(
+my_logit = fv_my,
+glm      = fv_glm
+),
+10
+)
+
+all.equal(fv_my, fv_glm, tolerance = 1e-6)
+```
+### Efficiency Benchmark
+
+Finally, I use the bench::mark() function to evaluate computational performance.
+Although glm() is faster due to internal C-level optimizations, this comparison
+demonstrates that my_logit() remains computationally feasible for moderately sized data.
+```{r}
+set.seed(123)
+
+bench_res <- bench::mark(
+my_logit = my_logit(form, data = data, max_iter = 25),
+glm      = glm(form, data = data, family = binomial()),
+iterations = 200,
+check = FALSE
+)
+
+bench_res
+```
