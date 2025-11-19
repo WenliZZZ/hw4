@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(hw4)
 library(stats)
+library(bench)
 ```
 ### Model Fitting
 
@@ -100,7 +101,7 @@ all.equal(fv_my, fv_glm, tolerance = 1e-6)
 Finally, I use the bench::mark() function to evaluate computational performance.
 Although glm() is faster due to internal C-level optimizations, this comparison
 demonstrates that my_logit() remains computationally feasible for moderately sized data.
-```{r, eval=FALSE}
+```{r}
 set.seed(123)
 
 bench_res <- bench::mark(
